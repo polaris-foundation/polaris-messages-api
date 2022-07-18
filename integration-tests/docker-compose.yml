@@ -1,0 +1,84 @@
+x-environment: &COMMON_ENVIRONMENT
+  ENVIRONMENT: DEVELOPMENT
+  ALLOW_DROP_DATA: "true"
+  PROXY_URL: http://localhost
+  HS_ISSUER: http://localhost/
+  HS_KEY: secret
+  AUTH0_AUDIENCE: http://localhost/
+  AUTH0_CLIENT_ID: dummy
+  REDIS_HOST: localhost
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: doesntmatter
+  LOG_LEVEL: INFO
+  LOG_FORMAT: COLOUR
+  DATABASE_HOST: dhos-messages-api-db
+  DATABASE_PORT: 5432
+  DATABASE_USER: dhos-messages-api-db
+  DATABASE_PASSWORD: dhos-messages-api-db
+  DATABASE_NAME: dhos-messages-api-db
+
+services:
+  dhos-messages-integration-tests:
+    container_name: "dhos-messages-integration-tests"
+    build:
+      context: .
+      args:
+        - PIP_EXTRA_INDEX_URL
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      BEHAVE_ARGS: ${BEHAVE_ARGS:-}
+      REPORT_PORTAL_URL: ${REPORT_PORTAL_URL:-}
+      REPORT_PORTAL_TOKEN: ${REPORT_PORTAL_TOKEN:-}
+      REPORT_PORTAL_PROJECT: ${REPORT_PORTAL_PROJECT:-}
+      ENVIRONMENT: ${ENVIRONMENT:-}
+      RELEASE: ${RELEASE:-}
+      CLINICIAN_JWT_SCOPE: >-
+        read:gdm_message read:gdm_patient
+        read:gdm_patient_all write:gdm_message
+      PATIENT_JWT_SCOPE: >-
+        read:gdm_message read:gdm_patient
+        write:gdm_message write:gdm_message_all
+      SYSTEM_JWT_SCOPE: >-
+        read:gdm_message read:gdm_message_all read:gdm_patient
+        read:gdm_patient_all write:gdm_message write:gdm_message_all
+    command: >
+      bash -c "behave --no-capture --no-logcapture ${BEHAVE_ARGS:-}"
+    depends_on:
+      "dhos-messages-api":
+        condition: service_healthy
+
+  dhos-messages-api:
+    container_name: "dhos-messages-api"
+    build:
+      context: ../
+      args:
+        - GEMFURY_DOWNLOAD_KEY
+    environment:
+      <<: *COMMON_ENVIRONMENT
+    ports:
+      - "5000:5000"
+    command: >
+      bash -c "flask db upgrade 
+      && python -m dhos_messages_api"
+    healthcheck:
+      test: "curl -f http://localhost:5000/running || false"
+      interval: 1s
+      retries: 40
+      start_period: 10s
+    depends_on:
+      "dhos-messages-api-db":
+        condition: service_healthy
+  
+  dhos-messages-api-db:
+    container_name: "dhos-messages-api-db"
+    image: docker.io/postgres
+    environment:
+      POSTGRES_USER: dhos-messages-api-db
+      POSTGRES_DB: dhos-messages-api-db
+      POSTGRES_PASSWORD: dhos-messages-api-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      

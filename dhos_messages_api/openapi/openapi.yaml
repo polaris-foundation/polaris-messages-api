@@ -1,0 +1,830 @@
+openapi: 3.0.3
+info:
+  description: The DHOS Messages API is responsible for storing and retrieving messages.
+  title: DHOS Messages API
+  version: 1.2.0
+paths:
+  /running:
+    get:
+      summary: Verify service is running
+      description: Verifies that the service is running. Used for monitoring in kubernetes.
+      tags:
+      - monitoring
+      responses:
+        '200':
+          description: If we respond, we are running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  running:
+                    type: boolean
+                    example: true
+      operationId: flask_batteries_included.blueprint_monitoring.app_running
+  /version:
+    get:
+      summary: Get version information
+      description: Get the version number, circleci build number, and git hash.
+      tags:
+      - monitoring
+      responses:
+        '200':
+          description: Version numbers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  circle:
+                    type: string
+                    example: '1234'
+                  hash:
+                    type: string
+                    example: 366c204
+      operationId: flask_batteries_included.blueprint_monitoring.app_version
+  /dhos/v1/message:
+    post:
+      summary: Create new message
+      description: Create a new message using the details provided in the request
+        body.
+      tags:
+      - message
+      parameters:
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      requestBody:
+        description: JSON body containing the message
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+      responses:
+        '200':
+          description: The new message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.create_message_v1
+      deprecated: true
+      security:
+      - bearerAuth: []
+  /dhos/v2/message:
+    post:
+      summary: Create new message
+      description: Create a new message using the details provided in the request
+        body.
+      tags:
+      - message
+      parameters:
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      requestBody:
+        description: JSON body containing the message
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+      responses:
+        '200':
+          description: The new message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.create_message
+      security:
+      - bearerAuth: []
+  /dhos/v1/message/{message_id}:
+    get:
+      summary: Get message
+      description: Get a message by the UUID provided in the URL path.
+      tags:
+      - message
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        description: The message UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: The message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_message_by_uuid
+      security:
+      - bearerAuth: []
+    patch:
+      summary: Update message
+      description: Update the message matching the UUID provided in the request path,
+        using the fields provided in the request body.
+      tags:
+      - message
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        description: The message UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      requestBody:
+        description: JSON body containing the message
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessagePatchRequest'
+      responses:
+        '200':
+          description: The updated message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.update_message
+      security:
+      - bearerAuth: []
+  /dhos/v1/sender/{sender_id}/message:
+    get:
+      summary: Get messages by sender
+      description: Get a list of messages sent by the sender UUID provided in the
+        URL path.
+      tags:
+      - message
+      parameters:
+      - name: sender_id
+        in: path
+        required: true
+        description: The sender UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of messages sent by the sender
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_messages_by_sender_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/receiver/{receiver_id}/message:
+    get:
+      summary: Get messages by receiver
+      description: 'Get a list of messages received by the receiver UUID provided
+        in the URL path.
+
+        Consumers of this endpoint who have the `read:gdm_message_all` permission
+        will retrieve all messages received by the receiver.
+
+        For all other consumers, this endpoint will only retrieve messages where the
+        consumer of the endpoint is themselves the receiver - i.e. their JWT claims
+        will need to show them as having the UUID that is passed in as the receiver_id
+        parameter.'
+      tags:
+      - message
+      parameters:
+      - name: receiver_id
+        in: path
+        required: true
+        description: The receiver UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of messages received by the receiver
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_messages_by_receiver_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/sender/{sender_id}/active/message:
+    get:
+      summary: Get active messages by sender
+      description: Get a list of active messages sent by the sender UUID provided
+        in the URL path.
+      tags:
+      - message
+      parameters:
+      - name: sender_id
+        in: path
+        required: true
+        description: The sender UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of active messages sent by the sender
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_active_messages_by_sender_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/receiver/{receiver_id}/active/message:
+    get:
+      summary: Get active messages by receiver
+      description: 'Get a list of active messages received by the receiver UUID in
+        the URL path.
+
+        Consumers of this endpoint who have the `read:gdm_message_all` permission
+        will retrieve all active messages received by the receiver.
+
+        For all other consumers, this endpoint will only retrieve active messages
+        where the consumer of the endpoint is themselves the receiver - i.e. their
+        JWT claims will need to show them as having the UUID that is passed in as
+        the receiver_id parameter.'
+      tags:
+      - message
+      parameters:
+      - name: receiver_id
+        in: path
+        required: true
+        description: The receiver UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of active messages received by the receiver
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_active_messages_by_receiver_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/sender_or_receiver/{unique_id}/message:
+    get:
+      summary: Get messages by sender or receiver
+      description: Get a list of messages sent by the sender or received by the receiver
+        who matches the UUID provided in the URL path.
+      tags:
+      - message
+      parameters:
+      - name: unique_id
+        in: path
+        required: true
+        description: The sender UUID or receiver UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of messages sent by the sender or received by the receiver
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_messages_by_sender_uuid_or_receiver_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/sender/{sender_id}/receiver/{receiver_id}/message:
+    get:
+      summary: Get messages by sender and receiver
+      description: Get a list of messages sent by the sender UUID and received by
+        the receiver UUID, both of which should be provided in the URL path.
+      tags:
+      - message
+      parameters:
+      - name: sender_id
+        in: path
+        required: true
+        description: The sender UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - name: receiver_id
+        in: path
+        required: true
+        description: The receiver UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of messages sent by the sender and received by the receiver
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_messages_by_sender_uuid_and_receiver_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/sender/{sender_id}/receiver/{receiver_id}/active/message:
+    get:
+      summary: Get active messages by sender and receiver
+      description: Get a list of active messages sent by the sender UUID and received
+        by the receiver UUID, both of which should be provided in the URL path.
+      tags:
+      - message
+      parameters:
+      - name: sender_id
+        in: path
+        required: true
+        description: The sender UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - name: receiver_id
+        in: path
+        required: true
+        description: The receiver UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of active messages sent by the sender and received by
+            the receiver
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_active_messages_by_sender_uuid_and_receiver_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/receiver/{receiver_id}/active/callback/message:
+    get:
+      summary: Get active callback messages by receiver
+      description: 'Get a list of active callback messages received by the receiver
+        UUID provided in the URL path.
+
+        Consumers of this endpoint who have the `read:gdm_message_all` permission
+        will retrieve all active callback messages received by the receiver.
+
+        For all other consumers, this endpoint will only retrieve active callback
+        messages where the consumer of the endpoint is themselves the receiver - i.e.
+        their JWT claims will need to show them as having the UUID that is passed
+        in as the receiver_id parameter.'
+      tags:
+      - message
+      parameters:
+      - name: receiver_id
+        in: path
+        required: true
+        description: The receiver UUID
+        schema:
+          type: string
+          example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      responses:
+        '200':
+          description: A list of active callback messages received by the receiver
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_active_callback_messages_by_receiver_uuid
+      security:
+      - bearerAuth: []
+  /dhos/v1/active/callback/message:
+    post:
+      summary: Get active callback messages for patients
+      description: 'Get a list of active callback messages sent by all of the patient
+        UUIDs provided in the request body.
+
+        You must have either "read:gdm_patient_all" or "read:gdm_patient" to get messages
+        from this endpoint.'
+      tags:
+      - message
+      parameters:
+      - in: header
+        name: X-Location-Ids
+        description: List of location UUIDs, only used for clinicians
+        schema:
+          type: string
+          example: 09db61d2-2ad9-4878-beee-1225b720c205,5d68b104-38cb-48fe-a814-00ac1387ef17
+        required: false
+      requestBody:
+        description: JSON body containing the list of patients
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                example: 18439f36-ffa9-42ae-90de-0beda299cd37
+      responses:
+        '200':
+          description: A list of active callback messages for the list of patient
+            UUIDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+        default:
+          description: Error, e.g. 400 Bad Request, 404 Not Found, 503 Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: dhos_messages_api.blueprint_api.get_active_callback_messages_for_patients
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: HTTP response code
+          example: 404
+        message:
+          type: string
+          description: Message attached to response
+          example: Not Found
+      required:
+      - code
+      description: An error response in json format
+    MessageTypeSchema:
+      type: object
+      properties:
+        value:
+          type: integer
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
+          example: 1
+          description: The type of the message
+      required:
+      - value
+      title: Message Type schema fields
+    MessageSchema:
+      type: object
+      properties:
+        sender:
+          type: string
+          example: 74780805-0a75-4bc3-99fb-3e3a64986cac
+          description: The UUID of the sender
+        sender_type:
+          type: string
+          example: clinician
+          description: The type of the sender
+        receiver:
+          type: string
+          example: 74780805-0a75-4bc3-99fb-3e3a64986cac
+          description: The UUID of the receiver
+        receiver_type:
+          type: string
+          example: patient
+          description: The type of the receiver
+        message_type:
+          $ref: '#/components/schemas/MessageTypeSchema'
+        content:
+          type: string
+          example: Please call me at your earliest convenience.
+          description: The content of the message
+      required:
+      - content
+      - message_type
+      - receiver
+      - receiver_type
+      - sender
+      - sender_type
+      title: Message fields common to request and response
+    MessageRequest:
+      type: object
+      properties:
+        sender:
+          type: string
+          example: 74780805-0a75-4bc3-99fb-3e3a64986cac
+          description: The UUID of the sender
+        sender_type:
+          type: string
+          example: clinician
+          description: The type of the sender
+        receiver:
+          type: string
+          example: 74780805-0a75-4bc3-99fb-3e3a64986cac
+          description: The UUID of the receiver
+        receiver_type:
+          type: string
+          example: patient
+          description: The type of the receiver
+        message_type:
+          $ref: '#/components/schemas/MessageTypeSchema'
+        content:
+          type: string
+          example: Please call me at your earliest convenience.
+          description: The content of the message
+      required:
+      - content
+      - message_type
+      - receiver
+      - receiver_type
+      - sender
+      - sender_type
+      title: Message request
+    MessageResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: Universally unique identifier for object
+          example: 2c4f1d24-2952-4d4e-b1d1-3637e33cc161
+        created:
+          type: string
+          description: When the object was created
+          example: '2017-09-23T08:29:19.123+00:00'
+        created_by:
+          type: string
+          description: UUID of the user that created the object
+          example: d26570d8-a2c9-4906-9c6a-ea1a98b8b80f
+        modified:
+          type: string
+          description: When the object was modified
+          example: '2017-09-23T08:29:19.123+00:00'
+        modified_by:
+          type: string
+          description: UUID of the user that modified the object
+          example: 2a0e26e5-21b6-463a-92e8-06d7290067d0
+        sender:
+          type: string
+          example: 74780805-0a75-4bc3-99fb-3e3a64986cac
+          description: The UUID of the sender
+        sender_type:
+          type: string
+          example: clinician
+          description: The type of the sender
+        receiver:
+          type: string
+          example: 74780805-0a75-4bc3-99fb-3e3a64986cac
+          description: The UUID of the receiver
+        receiver_type:
+          type: string
+          example: patient
+          description: The type of the receiver
+        message_type:
+          $ref: '#/components/schemas/MessageTypeSchema'
+        content:
+          type: string
+          example: Please call me at your earliest convenience.
+          description: The content of the message
+      required:
+      - content
+      - message_type
+      - receiver
+      - receiver_type
+      - sender
+      - sender_type
+      - uuid
+      title: Message response
+    MessagePatchRequest:
+      type: object
+      properties:
+        retrieved:
+          type: string
+          minLength: 1
+          example: '2018-02-11T11:59:50.123+03:00'
+          description: The timezone-aware timestamp at which the message was retrieved
+        confirmed:
+          type: string
+          minLength: 1
+          example: '2018-02-12T09:44:40.456+03:00'
+          description: The timezone-aware timestamp at which the message was confirmed
+        confirmed_by:
+          type: string
+          minLength: 1
+          example: ac8459b0-6a9a-4e8e-a2de-41c5dd9b81aa
+          description: The UUID of the user who confirmed the message
+        related_message:
+          type: string
+          minLength: 1
+          example: ac8459b0-6a9a-4e8e-a2de-41c5dd9b81aa
+          description: The UUID of the related message
+        cancelled:
+          type: string
+          minLength: 1
+          example: '2018-02-13T07:23:30.789+03:00'
+          description: The timezone-aware timestamp at which the message was cancelled
+        cancelled_by:
+          type: string
+          minLength: 1
+          example: ac8459b0-6a9a-4e8e-a2de-41c5dd9b81aa
+          description: The UUID of the user who cancelled the message
+      title: Message PATCH request
+  responses:
+    BadRequest:
+      description: Bad or malformed request was received
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ServiceUnavailable:
+      description: Service or dependent resource not available
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

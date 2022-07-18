@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "dhos-messages-api"
+version = "0.0.1"
+description = "Messages API to manage in-app communication between clinicians and patients"
+authors = ["Andrew Gill <andrew.gill@sensynehealth.com>"]
+keywords = ["Messages", "DHOS"]
+repository = "https://github.com/draysontechnologies/dhos-messages-api"
+
+[[tool.poetry.source]]
+name = "sensynehealth"
+url = "https://pypi.fury.io/sensynehealth/"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+dhos-redis = "1.*"
+flask-batteries-included = {version = "3.*", extras = ["apispec", "pgsql"]}
+she-logging = "1.*"
+waitress = "2.*"
+
+[tool.poetry.dev-dependencies]
+bandit = "*"
+black = "*"
+coloredlogs = "*"
+coverage = "*"
+isort = "*"
+jsonschema = "3.*"
+mock = "*"
+mypy = "*"
+pytest = "*"
+pytest-dhos = {version = "*", extras=["fbi"]}
+pytest-flask = "*"
+pytest-mock = "*"
+requests_mock = "*"
+sadisplay = "*"
+safety = "*"
+tox = "*"
+types-PyYAML = "*"
+types-requests = "*"

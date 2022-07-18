@@ -1,0 +1,17 @@
+[paths]
+source =
+  dhos_messages_api/*
+
+[report]
+omit =
+  */__main__.py
+  dhos_messages_api/app.py
+  dhos_messages_api/autoapp.py
+  dhos_messages_api/config.py
+  dhos_messages_api/blueprint_development/*
+  dhos_messages_api/test_data/generate_test_data.py
+
+fail_under = 90
+
+show_missing = true
+skip_covered = true
