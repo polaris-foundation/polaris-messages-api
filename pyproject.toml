@@ -3,12 +3,8 @@ name = "dhos-messages-api"
 version = "0.0.1"
 description = "Messages API to manage in-app communication between clinicians and patients"
 authors = ["Andrew Gill <andrew.gill@sensynehealth.com>"]
-keywords = ["Messages", "DHOS"]
-repository = "https://github.com/draysontechnologies/dhos-messages-api"
-
-[[tool.poetry.source]]
-name = "sensynehealth"
-url = "https://pypi.fury.io/sensynehealth/"
+keywords = ["Messages", "Polaris"]
+repository = "https://github.com/polaris-foundation/polaris-messages-api"
 
 [tool.poetry.dependencies]
 python = "^3.9"
